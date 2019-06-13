@@ -30,6 +30,7 @@ const interfaces = os.networkInterfaces();
 const warning = (message) => chalk`{yellow WARNING:} ${message}`;
 const info = (message) => chalk`{magenta INFO:} ${message}`;
 const error = (message) => chalk`{red ERROR:} ${message}`;
+const req = (message) => chalk`{gray ${message}}`;
 
 const updateCheck = async (isDebugging) => {
 	let update = null;
@@ -75,15 +76,9 @@ const getHelp = () => chalk`
       -l, --listen {underline listen_uri}             Specify a URI endpoint on which to listen (see below) -
                                           more than one may be specified to listen in multiple places
 
-      -d, --debug                         Show debugging information
+      --cors                              Set Access-Control-Allow-Origin: * on every response
 
-      -s, --single                        Rewrite all not-found requests to \`index.html\`
-
-      -c, --config                        Specify custom path to \`serve.json\`
-
-      -n, --no-clipboard                  Do not copy the local address to the clipboard
-
-      -S, --symlinks                      Resolve symlinks instead of showing 404 errors
+      --delay {underline ms}                          Delays the request by n milliseconds
 
   {bold ENDPOINTS}
 
@@ -92,19 +87,7 @@ const getHelp = () => chalk`
 
       For TCP ports on hostname "localhost":
 
-          {bold $} {cyan serve} -l {underline 1234}
-
-      For TCP (traditional host/port) endpoints:
-
-          {bold $} {cyan serve} -l tcp://{underline hostname}:{underline 1234}
-
-      For UNIX domain socket endpoints:
-
-          {bold $} {cyan serve} -l unix:{underline /path/to/socket.sock}
-
-      For Windows named pipe endpoints:
-
-          {bold $} {cyan serve} -l pipe:\\\\.\\pipe\\{underline PipeName}
+          {bold $} {cyan serve} --listen {underline 3001}
 `;
 
 const parseEndpoint = (str) => {
@@ -167,15 +150,30 @@ const getNetworkAddress = () => {
 	}
 };
 
+const wait = (ms) =>
+	new Promise((resolve) => setTimeout(resolve, ms));
+
 const startEndpoint = (endpoint, config, args, previous) => {
 	const {isTTY} = process.stdout;
 	const clipboard = args['--no-clipboard'] !== true;
 	const compress = args['--no-compression'] !== true;
+	const cors = args['--cors'];
+	const delay = args['--delay'];
 
 	const server = http.createServer(async (request, response) => {
 		if (compress) {
 			await compressionHandler(request, response);
 		}
+
+		if (cors) {
+			response.header('Access-Control-Allow-Origin', '*');
+		}
+
+		if (delay) {
+			await wait(delay);
+		}
+
+		console.log(req(request.url));
 
 		return handler(request, response, config);
 	});
@@ -341,6 +339,8 @@ const loadConfig = async (cwd, entry, args) => {
 			'--single': Boolean,
 			'--debug': Boolean,
 			'--config': String,
+			'--delay': Number,
+			'--cors': Boolean,
 			'--no-clipboard': Boolean,
 			'--no-compression': Boolean,
 			'--symlinks': Boolean,
@@ -362,7 +362,7 @@ const loadConfig = async (cwd, entry, args) => {
 	}
 
 	if (process.env.NO_UPDATE_CHECK !== '1') {
-		await updateCheck(args['--debug']);
+		// await updateCheck(args['--debug']);
 	}
 
 	if (args['--version']) {

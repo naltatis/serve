@@ -1,5 +1,5 @@
 {
-  "name": "serve",
+  "name": "@microfrontends/serve",
   "version": "11.0.1",
   "description": "Static file serving and directory listing",
   "scripts": {
@@ -10,7 +10,7 @@
   "files": [
     "bin"
   ],
-  "repository": "zeit/serve",
+  "repository": "naltatis/serve",
   "bin": {
     "serve": "./bin/serve.js"
   },
