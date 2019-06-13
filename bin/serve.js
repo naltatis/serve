@@ -10,7 +10,7 @@ const os = require('os');
 
 // Packages
 const Ajv = require('ajv');
-const checkForUpdate = require('update-check');
+// const checkForUpdate = require('update-check');
 const chalk = require('chalk');
 const arg = require('arg');
 const {write: copy} = require('clipboardy');
@@ -32,6 +32,7 @@ const info = (message) => chalk`{magenta INFO:} ${message}`;
 const error = (message) => chalk`{red ERROR:} ${message}`;
 const req = (message) => chalk`{gray ${message}}`;
 
+/*
 const updateCheck = async (isDebugging) => {
 	let update = null;
 
@@ -52,6 +53,7 @@ const updateCheck = async (isDebugging) => {
 
 	console.log(`${chalk.bgRed('UPDATE AVAILABLE')} The latest version of \`serve\` is ${update.latest}`);
 };
+*/
 
 const getHelp = () => chalk`
   {bold.cyan serve} - Static file serving and directory listing
@@ -166,14 +168,18 @@ const startEndpoint = (endpoint, config, args, previous) => {
 		}
 
 		if (cors) {
-			response.header('Access-Control-Allow-Origin', '*');
+			response.setHeader('Access-Control-Allow-Origin', '*');
 		}
 
 		if (delay) {
 			await wait(delay);
 		}
 
-		console.log(req(request.url));
+		response.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+
+		if (request.url !== '/favicon.ico') {
+			console.log(req(request.url));
+		}
 
 		return handler(request, response, config);
 	});
