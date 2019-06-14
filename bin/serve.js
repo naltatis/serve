@@ -56,15 +56,15 @@ const updateCheck = async (isDebugging) => {
 */
 
 const getHelp = () => chalk`
-  {bold.cyan serve} - Static file serving and directory listing
+  {bold.cyan mfserve} - Static file serving and directory listing
 
   {bold USAGE}
 
-      {bold $} {cyan serve} --help
-      {bold $} {cyan serve} --version
-      {bold $} {cyan serve} [-l {underline listen_uri} [-l ...]] [{underline directory}]
+      {bold $} {cyan mfserve} --help
+      {bold $} {cyan mfserve} --version
+      {bold $} {cyan mfserve} [-l {underline listen_uri} [-l ...]] [{underline directory}]
 
-      By default, {cyan serve} will listen on {bold 0.0.0.0:5000} and serve the
+      By default, {cyan mfserve} will listen on {bold 0.0.0.0:5000} and serve the
       current working directory on that address.
 
       Specifying a single {bold --listen} argument will overwrite the default, not supplement it.
@@ -84,12 +84,12 @@ const getHelp = () => chalk`
 
   {bold ENDPOINTS}
 
-      Listen endpoints (specified by the {bold --listen} or {bold -l} options above) instruct {cyan serve}
+      Listen endpoints (specified by the {bold --listen} or {bold -l} options above) instruct {cyan mfserve}
       to listen on one or more interfaces/ports, UNIX domain sockets, or Windows named pipes.
 
       For TCP ports on hostname "localhost":
 
-          {bold $} {cyan serve} --listen {underline 3001}
+          {bold $} {cyan mfserve} --listen {underline 3001}
 `;
 
 const parseEndpoint = (str) => {
@@ -161,6 +161,7 @@ const startEndpoint = (endpoint, config, args, previous) => {
 	const compress = args['--no-compression'] !== true;
 	const cors = args['--cors'];
 	const delay = args['--delay'];
+	const port = args['--listen'];
 
 	const server = http.createServer(async (request, response) => {
 		if (compress) {
@@ -178,7 +179,7 @@ const startEndpoint = (endpoint, config, args, previous) => {
 		response.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
 
 		if (request.url !== '/favicon.ico') {
-			console.log(req(request.url));
+			console.log(req(`:${port}${request.url}`));
 		}
 
 		return handler(request, response, config);

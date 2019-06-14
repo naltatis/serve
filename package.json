@@ -1,5 +1,5 @@
 {
-  "name": "@microfrontends/mfserve",
+  "name": "@microfrontends/serve",
   "version": "11.1.0",
   "description": "Static file serving and directory listing",
   "scripts": {
@@ -12,7 +12,7 @@
   ],
   "repository": "naltatis/serve",
   "bin": {
-    "serve": "./bin/serve.js"
+    "mfserve": "./bin/serve.js"
   },
   "keywords": [
     "now",
