@@ -80,7 +80,9 @@ const getHelp = () => chalk`
 
       --cors                              Set Access-Control-Allow-Origin: * on every response
 
-      --delay {underline ms}                          Delays the request by n milliseconds
+			--delay {underline ms}                          Delays the request by n milliseconds
+
+			--single                        		SPA Mode; Rewrite all not-found requests to \`index.html\`
 
   {bold ENDPOINTS}
 
