@@ -1,6 +1,6 @@
 {
   "name": "@microfrontends/serve",
-  "version": "11.2.1",
+  "version": "11.2.2",
   "description": "Static file serving and directory listing",
   "scripts": {
     "test": "yarn lint",
