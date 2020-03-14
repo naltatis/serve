@@ -2,6 +2,7 @@
 
 // Native
 const http = require('http');
+const https = require('https');
 const path = require('path');
 const fs = require('fs');
 const {promisify} = require('util');
@@ -60,9 +61,10 @@ const getHelp = () => chalk`
 
   {bold USAGE}
 
-      {bold $} {cyan mfserve} --help
-      {bold $} {cyan mfserve} --version
-      {bold $} {cyan mfserve} [-l {underline listen_uri} [-l ...]] [{underline directory}]
+      {bold $} {cyan serve} --help
+      {bold $} {cyan serve} --version
+      {bold $} {cyan serve} folder_name
+      {bold $} {cyan serve} [-l {underline listen_uri} [-l ...]] [{underline directory}]
 
       By default, {cyan mfserve} will listen on {bold 0.0.0.0:5000} and serve the
       current working directory on that address.
@@ -164,8 +166,9 @@ const startEndpoint = (endpoint, config, args, previous) => {
 	const cors = args['--cors'];
 	const delay = args['--delay'];
 	const port = args['--listen'];
+	const httpMode = args['--ssl-cert'] && args['--ssl-key'] ? 'https' : 'http';
 
-	const server = http.createServer(async (request, response) => {
+	const serverHandler = async (request, response) => {
 		if (compress) {
 			await compressionHandler(request, response);
 		}
@@ -185,7 +188,14 @@ const startEndpoint = (endpoint, config, args, previous) => {
 		}
 
 		return handler(request, response, config);
-	});
+	};
+
+	const server = httpMode === 'https'
+		? https.createServer({
+			key: fs.readFileSync(args['--ssl-key']),
+			cert: fs.readFileSync(args['--ssl-cert'])
+		}, serverHandler)
+		: http.createServer(serverHandler);
 
 	server.on('error', (err) => {
 		if (err.code === 'EADDRINUSE' && endpoint.length === 1 && !isNaN(endpoint[0])) {
@@ -210,8 +220,8 @@ const startEndpoint = (endpoint, config, args, previous) => {
 			const address = details.address === '::' ? 'localhost' : details.address;
 			const ip = getNetworkAddress();
 
-			localAddress = `http://${address}:${details.port}`;
-			networkAddress = `http://${ip}:${details.port}`;
+			localAddress = `${httpMode}://${address}:${details.port}`;
+			networkAddress = `${httpMode}://${ip}:${details.port}`;
 		}
 
 		if (isTTY && process.env.NODE_ENV !== 'production') {
@@ -267,7 +277,7 @@ const loadConfig = async (cwd, entry, args) => {
 	const config = {};
 
 	for (const file of files) {
-		const location = path.join(entry, file);
+		const location = path.resolve(entry, file);
 		let content = null;
 
 		try {
@@ -318,7 +328,7 @@ const loadConfig = async (cwd, entry, args) => {
 
 	if (entry) {
 		const {public} = config;
-		config.public = path.relative(cwd, (public ? path.join(entry, public) : entry));
+		config.public = path.relative(cwd, (public ? path.resolve(entry, public) : entry));
 	}
 
 	if (Object.keys(config).length !== 0) {
@@ -333,6 +343,9 @@ const loadConfig = async (cwd, entry, args) => {
 			process.exit(1);
 		}
 	}
+
+	// "ETag" headers are enabled by default unless `--no-etag` is provided
+	config.etag = !args['--no-etag'];
 
 	return config;
 };
@@ -352,7 +365,10 @@ const loadConfig = async (cwd, entry, args) => {
 			'--cors': Boolean,
 			'--no-clipboard': Boolean,
 			'--no-compression': Boolean,
+			'--no-etag': Boolean,
 			'--symlinks': Boolean,
+			'--ssl-cert': String,
+			'--ssl-key': String,
 			'-h': '--help',
 			'-v': '--version',
 			'-l': '--listen',
@@ -362,6 +378,7 @@ const loadConfig = async (cwd, entry, args) => {
 			'-n': '--no-clipboard',
 			'-u': '--no-compression',
 			'-S': '--symlinks',
+			'-C': '--cors',
 			// This is deprecated and only for backwards-compatibility.
 			'-p': '--listen'
 		});
